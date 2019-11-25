@@ -58,7 +58,7 @@ class GCodeReader:
 		# Get list of arguments
 		args = re.split('\s+', line)
 
-		arguments = []
+		arguments = {}
 		# Parse each argument
 		for arg in args:
 			if len(arg) == 0:
@@ -70,7 +70,7 @@ class GCodeReader:
 				return {'line': ind, 'type': 'error', 'error': 'Argument \'{0}\' is not recognized'.format(arg),
 				        'command': cmd, 'comment': comment, 'content': line_cnt}
 			# Add to list
-			arguments.append((arg[0], arg[1:len(arg)]))
+			arguments[arg[0]] = arg[1:len(arg)]
 
 		# Return final dict
 		return {'line': ind, 'type': 'command', 'command': cmd, 'comment': comment, 'arguments': arguments}
