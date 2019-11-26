@@ -3,14 +3,20 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 from read_gcode import GCodeReader
-filePath = 'circ.gcode'
-commands = GCodeReader.parse_gcode(filePath)
 
-xs, ys, zs = [[0]], [[0]], [[0]]
+FILE_PATH = 'circcont.gcode'
+MIN_INTERVAL_LENGTH = 15 # Minimum consequent G1 commands to look for arc in
+
+commands = GCodeReader.parse_gcode(FILE_PATH)
+
+# List of (start, end) indices where the arc-fit should be later performed
+search_intervals = []
+cur_start = None
+
 cursor = [0, 0, 0]
 relative = False
-for command in commands:
-	print(command)
+for i, command in enumerate(commands):
+	# print(command)
 	if command['type'] in 'error':
 		print('Error in command detected: {0}'.format(command))
 		continue
@@ -72,35 +78,45 @@ for command in commands:
 		if cmd in 'G0':
 			cursor_prev = cursor[:]
 			pt = safeParseArgs(args)
-			if updateCursor(pt):
-				if len(xs[-1]) == 1:
-					xs[-1][0] = cursor[0]
-					ys[-1][0] = cursor[1]
-					zs[-1][0] = cursor[2]
-				else:
-					xs.append([cursor[0]])
-					ys.append([cursor[1]])
-					zs.append([cursor[2]])
+			updateCursor(pt)
 
 		# Linear movement
 		if cmd in 'G1':
 			pt = safeParseArgs(args)
-			if updateCursor(pt):
-				xs[-1].append(cursor[0])
-				ys[-1].append(cursor[1])
-				zs[-1].append(cursor[2])
+			updateCursor(pt)
+			if cur_start is None:
+				cur_start = i
+		elif not cur_start is None:
+			if i - cur_start + 1 >= MIN_INTERVAL_LENGTH:
+				search_intervals.append((cur_start, i))
+			cur_start = None
 	pass
 
-fig = plt.figure()
-ax = fig.gca(projection='3d')
-theta = np.linspace(-6 * np.pi, 6 * np.pi, 100)
-z = np.linspace(-3, 3, 100)
-r = z**2 + 1
-x = r * np.sin(theta)
-y = r * np.cos(theta)
-for i in range(len(xs)):
-	ax.plot(xs[i], ys[i], zs[i], label='move #{0}'.format(i))
-ax.legend()
+# print(search_intervals)
 
-plt.show()
+
+# Iterate over each flat interval (which consists of consequent G1 commands)
+for interval in search_intervals:
+	ind_start = interval[0]
+	ind_end = interval[1]
+	
+
+
+
+
+
+
+
+# fig = plt.figure()
+# ax = fig.gca(projection='3d')
+# theta = np.linspace(-6 * np.pi, 6 * np.pi, 100)
+# z = np.linspace(-3, 3, 100)
+# r = z**2 + 1
+# x = r * np.sin(theta)
+# y = r * np.cos(theta)
+# for i in range(len(xs)):
+# 	ax.plot(xs[i], ys[i], zs[i], label='move #{0}'.format(i))
+# ax.legend()
+#
+# plt.show()
 
