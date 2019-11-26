@@ -11,6 +11,7 @@ commands = GCodeReader.parse_gcode(FILE_PATH)
 
 # List of (start, end) indices where the arc-fit should be later performed
 search_intervals = []
+pts = [None] * len(commands)
 cur_start = None
 
 cursor = [0, 0, 0]
@@ -90,16 +91,36 @@ for i, command in enumerate(commands):
 			if i - cur_start + 1 >= MIN_INTERVAL_LENGTH:
 				search_intervals.append((cur_start, i))
 			cur_start = None
+
+		pts[i] = np.array(cursor[:])
 	pass
 
 # print(search_intervals)
 
+# Takes start/end indices for the interval where the arc-segments should be found
+def detect_arc(ind_start, ind_end):
+	l = ind_end - ind_start
+	dots = [None] * l
+	ddfs = [None] * l
+	for ind, i in enumerate(range(ind_start, ind_end - 1)):
+		p0 = pts[i]
+		p1 = pts[i + 1]
+		p2 = pts[i + 2]
+		l1 = p1 - p0
+		l2 = p2 - p1
+		dot = np.dot(l1, l2)
+		ddf = np.abs(np.linalg.norm(l1) - np.linalg.norm(l2))
+		dots[ind] = dot
+		ddfs[ind] = ddf
+	return (dots, ddfs)
 
 # Iterate over each flat interval (which consists of consequent G1 commands)
 for interval in search_intervals:
-	ind_start = interval[0]
-	ind_end = interval[1]
-	
+	vals = detect_arc(interval[0], interval[1])
+	# fig = plt.figure()
+	# plt.plot(vals[0])
+	# plt.plot(vals[1])
+	# plt.show()
 
 
 
